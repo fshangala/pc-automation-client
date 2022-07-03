@@ -4,14 +4,21 @@ import pyautogui
 import rel
 import json
 from selenium.webdriver import Chrome
+import os
 
 driver:Chrome = None
 webdriverThread:Thread = None
 
+wd = os.path.dirname(__file__)
+config = None
+with open(wd+"/config.json","r") as config_file:
+    config = json.loads(config_file.read())
+
 def startDriver():
     global driver
-    driver = Chrome("./chromedriver")
-    driver.get("https://lotusbook247.com")
+    global config
+    driver = Chrome(config["chromedriver"])
+    driver.get(config["targeturl"])
 
 def mouse_event(event,*args,**kwargs):
     if event == "click":
@@ -43,9 +50,10 @@ def on_open(ws):
     webdriverThread = Thread(target=startDriver,daemon=True).start()
 
 def main():
+    global config
     code = input("Enter code: ")
-    host = "localhost"
-    port = 8000
+    host = config["host"]
+    port = config["port"]
 
     #websocket.enableTrace(True)
     ws = websocket.WebSocketApp(f"ws://{host}:{port}/ws/pcautomation/{code}/",
