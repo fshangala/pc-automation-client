@@ -9,7 +9,8 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QPushButton,
-    QDialog
+    QDialog,
+    QFileDialog
 )
 from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtCore import QUrl, QSettings
@@ -21,7 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setWindowTitle("PC Client")
-        self.setMinimumSize(400,200)
+        self.setMinimumSize(500,200)
 
         self.webdriver:Chrome = None
 
@@ -65,6 +66,9 @@ class MainWindow(QMainWindow):
         self.chromeDriverInput = QLineEdit()
         self.chromeDriverInput.setText(self.settings.value("chromedriver",self.defaultChromeDriver))
         self.preferencesLayout.addRow("Chrome Driver Path",self.chromeDriverInput)
+        self.chromeDriverBrowse = QPushButton(text="Browse")
+        self.chromeDriverBrowse.clicked.connect(self.browseChromeDriver)
+        self.preferencesLayout.addRow(self.chromeDriverBrowse)
         self.targetUrl = QLineEdit()
         self.targetUrl.setText(self.settings.value("targeturl",self.defaultTargetUrl))
         self.preferencesLayout.addRow("Target URL",self.targetUrl)
@@ -85,6 +89,11 @@ class MainWindow(QMainWindow):
         self.settings.setValue("chromedriver",chromeDriver)
         self.settings.sync()
         self.showStatus(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {address} {port} Saved!")
+        self.stack.setCurrentIndex(0)
+    
+    def browseChromeDriver(self):
+        fpath, _ = QFileDialog.getOpenFileName(self,"Select Chrome Driver")
+        self.chromeDriverInput.setText(fpath)
     
     def openConnectionDialog(self):
         dlg = QDialog(self)
