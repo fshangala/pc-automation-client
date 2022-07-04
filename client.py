@@ -10,19 +10,24 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QDialog,
-    QFileDialog
+    QFileDialog,
 )
 from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtCore import QUrl, QSettings
 from datetime import datetime
 from PySide6.QtNetwork import QAbstractSocket
 from selenium.webdriver import Chrome
+from PySide6.QtGui import QIcon
+from qt_material import apply_stylesheet
 
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
+        self.base_dir = os.path.dirname(__file__)
+        
         self.setWindowTitle("PC Client")
         self.setMinimumSize(500,200)
+        self.setWindowIcon(QIcon(self.base_dir + "/pcicon.ico"))
 
         self.webdriver:Chrome = None
 
@@ -84,9 +89,11 @@ class MainWindow(QMainWindow):
         address = self.addressInput.text()
         port = self.portInput.text()
         chromeDriver = self.chromeDriverInput.text()
+        targeturl = self.targetUrl.text()
         self.settings.setValue("address",address)
         self.settings.setValue("port",port)
         self.settings.setValue("chromedriver",chromeDriver)
+        self.settings.setValue("targeturl",targeturl)
         self.settings.sync()
         self.showStatus(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {address} {port} Saved!")
         self.stack.setCurrentIndex(0)
@@ -116,10 +123,21 @@ class MainWindow(QMainWindow):
             else:
                 self.stack.setCurrentIndex(1)
                 return None
+
         try:
             self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
         except Exception as e:
-            self.showStatus(str(e))
+            chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
+            if os.path.exists(chromedriver):
+                self.webdriver = Chrome(chromedriver)
+            else:
+                self.stack.setCurrentIndex(1)
+                return None
+            
+            try:
+                self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
+            except Exception as e:
+                self.showStatus(str(e))
 
     def openConnection(self,code):
 
@@ -177,6 +195,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    apply_stylesheet(app, theme='dark_cyan.xml')
 
     window = MainWindow()
     window.show()
