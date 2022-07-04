@@ -1,4 +1,4 @@
-import sys, json
+import sys, json, pyautogui
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -15,12 +15,15 @@ from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtCore import QUrl, QSettings
 from datetime import datetime
 from PySide6.QtNetwork import QAbstractSocket
+from selenium.webdriver import Chrome
 
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setWindowTitle("PC Client")
         self.setMinimumSize(400,200)
+
+        self.webdriver:Chrome = None
 
         self.client = QWebSocket()
         self.client.textMessageReceived.connect(self.onTextMessageReceived)
@@ -32,6 +35,7 @@ class MainWindow(QMainWindow):
         self.defaultAddress = "server.iitsar.com"
         self.defaultPort = "65432"
         self.defaultChromeDriver = "./chromedriver"
+        self.defaultTargetUrl = "https://google.com"
 
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -61,6 +65,9 @@ class MainWindow(QMainWindow):
         self.chromeDriverInput = QLineEdit()
         self.chromeDriverInput.setText(self.settings.value("chromedriver",self.defaultChromeDriver))
         self.preferencesLayout.addRow("Chrome Driver Path",self.chromeDriverInput)
+        self.targetUrl = QLineEdit()
+        self.targetUrl.setText(self.settings.value("targeturl",self.defaultTargetUrl))
+        self.preferencesLayout.addRow("Target URL",self.targetUrl)
         self.saveButton = QPushButton(text="Save")
         self.saveButton.clicked.connect(self.savePreferences)
         self.preferencesLayout.addWidget(self.saveButton)
@@ -91,11 +98,17 @@ class MainWindow(QMainWindow):
         layout.addWidget(connectButton)
 
         dlg.show()
+    
+    def startWebdriver(self):
+        if self.webdriver == None:
+            self.webdriver = Chrome(self.settings.value("chromedriver",self.defaultChromeDriver))
+        
+        self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
 
     def openConnection(self,code):
 
-        host = "server.iitsar.com"
-        port = 65432
+        host = self.settings.value("address",self.defaultAddress)
+        port = self.settings.value("port",self.defaultPort)
         if code != "":
             if self.client.state() == QAbstractSocket.ConnectedState:
                 self.showStatus("Closing current connection...")
@@ -115,6 +128,7 @@ class MainWindow(QMainWindow):
             "kwargs":{}
         }
         self.client.sendTextMessage(json.dumps(ev))
+        self.startWebdriver()
     
     def onDisconnection(self):
         self.showStatus("Disconnected!")
@@ -126,9 +140,24 @@ class MainWindow(QMainWindow):
         data = json.loads(message)
         status = f"{data['event_type']} -> {data['event']}"
         self.showStatus(status)
+        handle = f"event_{data['event_type']}"
+        if hasattr(self,handle) and callable(func := getattr(self,handle)):
+            func(data["event"],*data["args"],**data["kwargs"])
     
     def showStatus(self,message:str):
         self.statusLabel.setText(message)
+    
+    # events
+    def event_mouse(self,event,*args,**kwargs):
+        if event == "click":
+            pyautogui.click()
+    
+    def event_webdriver(self,event,*args,**kwargs):
+        if event == "close":
+            self.webdriver.close()
+
+    def event_connection(self,event,*args,**kwargs):
+        pass
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
