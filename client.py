@@ -1,4 +1,4 @@
-import sys, json, pyautogui
+import sys, json, pyautogui, os
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -101,9 +101,16 @@ class MainWindow(QMainWindow):
     
     def startWebdriver(self):
         if self.webdriver == None:
-            self.webdriver = Chrome(self.settings.value("chromedriver",self.defaultChromeDriver))
-        
-        self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
+            chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
+            if os.path.exists(chromedriver):
+                self.webdriver = Chrome(chromedriver)
+            else:
+                self.stack.setCurrentIndex(1)
+                return None
+        try:
+            self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
+        except Exception as e:
+            self.showStatus(str(e))
 
     def openConnection(self,code):
 
