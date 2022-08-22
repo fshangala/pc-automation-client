@@ -19,6 +19,7 @@ from PySide6.QtNetwork import QAbstractSocket
 from selenium.webdriver import Chrome
 from PySide6.QtGui import QIcon
 from qt_material import apply_stylesheet
+from PySide6.QtWebEngineWidgets import QWebEngineView
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -68,12 +69,12 @@ class MainWindow(QMainWindow):
         self.portInput = QLineEdit()
         self.portInput.setText(self.settings.value("port",self.defaultPort))
         self.preferencesLayout.addRow("Port",self.portInput)
-        self.chromeDriverInput = QLineEdit()
-        self.chromeDriverInput.setText(self.settings.value("chromedriver",self.defaultChromeDriver))
-        self.preferencesLayout.addRow("Chrome Driver Path",self.chromeDriverInput)
-        self.chromeDriverBrowse = QPushButton(text="Browse")
-        self.chromeDriverBrowse.clicked.connect(self.browseChromeDriver)
-        self.preferencesLayout.addRow(self.chromeDriverBrowse)
+        #self.chromeDriverInput = QLineEdit()
+        #self.chromeDriverInput.setText(self.settings.value("chromedriver",self.defaultChromeDriver))
+        #self.preferencesLayout.addRow("Chrome Driver Path",self.chromeDriverInput)
+        #self.chromeDriverBrowse = QPushButton(text="Browse")
+        #self.chromeDriverBrowse.clicked.connect(self.browseChromeDriver)
+        #self.preferencesLayout.addRow(self.chromeDriverBrowse)
         self.targetUrl = QLineEdit()
         self.targetUrl.setText(self.settings.value("targeturl",self.defaultTargetUrl))
         self.preferencesLayout.addRow("Target URL",self.targetUrl)
@@ -81,26 +82,37 @@ class MainWindow(QMainWindow):
         self.saveButton.clicked.connect(self.savePreferences)
         self.preferencesLayout.addWidget(self.saveButton)
 
+        # Browser
+        self.browser = QWebEngineView()
+        self.browser.loadStarted.connect(lambda: self.statusBar().showMessage("Browser: Loading..."))
+        self.browser.loadFinished.connect(lambda: self.statusBar().showMessage("Browser: Page Loaded!"))
+        self.stack.addWidget(self.browser)
+        self.loadBrowserPage()
+
         # ToolBar
         self.menuBar().addAction("Dashboard").triggered.connect(lambda:self.stack.setCurrentIndex(0))
         self.menuBar().addAction("Preferences").triggered.connect(lambda:self.stack.setCurrentIndex(1))
+        self.menuBar().addAction("Browser").triggered.connect(lambda:self.stack.setCurrentIndex(2))
 
     def savePreferences(self):
         address = self.addressInput.text()
         port = self.portInput.text()
-        chromeDriver = self.chromeDriverInput.text()
+        #chromeDriver = self.chromeDriverInput.text()
         targeturl = self.targetUrl.text()
+        reloadBrowser = targeturl != self.settings.value("targeturl",self.defaultTargetUrl)
         self.settings.setValue("address",address)
         self.settings.setValue("port",port)
-        self.settings.setValue("chromedriver",chromeDriver)
+        #self.settings.setValue("chromedriver",chromeDriver)
         self.settings.setValue("targeturl",targeturl)
         self.settings.sync()
         self.showStatus(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {address} {port} Saved!")
+        if(reloadBrowser):
+            self.loadBrowserPage()
         self.stack.setCurrentIndex(0)
     
-    def browseChromeDriver(self):
-        fpath, _ = QFileDialog.getOpenFileName(self,"Select Chrome Driver")
-        self.chromeDriverInput.setText(fpath)
+    #def browseChromeDriver(self):
+    #    fpath, _ = QFileDialog.getOpenFileName(self,"Select Chrome Driver")
+    #    self.chromeDriverInput.setText(fpath)
     
     def openConnectionDialog(self):
         dlg = QDialog(self)
@@ -114,30 +126,32 @@ class MainWindow(QMainWindow):
         layout.addWidget(connectButton)
 
         dlg.show()
-    
-    def startWebdriver(self):
-        if self.webdriver == None:
-            chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
-            if os.path.exists(chromedriver):
-                self.webdriver = Chrome(chromedriver)
-            else:
-                self.stack.setCurrentIndex(1)
-                return None
 
-        try:
-            self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
-        except Exception as e:
-            chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
-            if os.path.exists(chromedriver):
-                self.webdriver = Chrome(chromedriver)
-            else:
-                self.stack.setCurrentIndex(1)
-                return None
-            
-            try:
-                self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
-            except Exception as e:
-                self.showStatus(str(e))
+    def loadBrowserPage(self):
+        self.browser.load(self.settings.value("targeturl",self.defaultTargetUrl))
+    
+    #def startWebdriver(self):
+    #    if self.webdriver == None:
+    #        chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
+    #        if os.path.exists(chromedriver):
+    #            self.webdriver = Chrome(chromedriver)
+    #        else:
+    #            self.stack.setCurrentIndex(1)
+    #            return None
+    #    try:
+    #        self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
+    #    except Exception as e:
+    #        chromedriver = self.settings.value("chromedriver",self.defaultChromeDriver)
+    #        if os.path.exists(chromedriver):
+    #            self.webdriver = Chrome(chromedriver)
+    #        else:
+    #            self.stack.setCurrentIndex(1)
+    #            return None
+    #        
+    #        try:
+    #            self.webdriver.get(self.settings.value("targeturl",self.defaultTargetUrl))
+    #        except Exception as e:
+    #            self.showStatus(str(e))
 
     def openConnection(self,code):
 
@@ -162,7 +176,7 @@ class MainWindow(QMainWindow):
             "kwargs":{}
         }
         self.client.sendTextMessage(json.dumps(ev))
-        self.startWebdriver()
+        self.stack.setCurrentIndex(2)
     
     def onDisconnection(self):
         self.showStatus("Disconnected!")
@@ -179,6 +193,7 @@ class MainWindow(QMainWindow):
             func(data["event"],*data["args"],**data["kwargs"])
     
     def showStatus(self,message:str):
+        #self.statusBar().showMessage(message)
         self.statusLabel.setText(message)
     
     # events
