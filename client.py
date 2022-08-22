@@ -20,6 +20,7 @@ from selenium.webdriver import Chrome
 from PySide6.QtGui import QIcon
 from qt_material import apply_stylesheet
 from PySide6.QtWebEngineWidgets import QWebEngineView
+from latest_user_agents import get_latest_user_agents
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -28,9 +29,11 @@ class MainWindow(QMainWindow):
         
         self.setWindowTitle("PC Client")
         self.setMinimumSize(500,200)
+        self.showMaximized()
         self.setWindowIcon(QIcon(self.base_dir + "/pcicon.ico"))
 
-        self.webdriver:Chrome = None
+        #self.webdriver:Chrome = None
+        self.userAgets = get_latest_user_agents()
 
         self.client = QWebSocket()
         self.client.textMessageReceived.connect(self.onTextMessageReceived)
@@ -84,6 +87,7 @@ class MainWindow(QMainWindow):
 
         # Browser
         self.browser = QWebEngineView()
+        self.browser.page().profile().setHttpUserAgent(self.userAgets[0])
         self.browser.loadStarted.connect(lambda: self.statusBar().showMessage("Browser: Loading..."))
         self.browser.loadFinished.connect(lambda: self.statusBar().showMessage("Browser: Page Loaded!"))
         self.stack.addWidget(self.browser)
@@ -201,9 +205,9 @@ class MainWindow(QMainWindow):
         if event == "click":
             pyautogui.click()
     
-    def event_webdriver(self,event,*args,**kwargs):
-        if event == "close":
-            self.webdriver.close()
+    #def event_webdriver(self,event,*args,**kwargs):
+    #    if event == "close":
+    #        self.webdriver.close()
 
     def event_connection(self,event,*args,**kwargs):
         pass
