@@ -9,18 +9,17 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QPushButton,
-    QDialog,
-    QFileDialog,
+    QDialog
 )
 from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtCore import QUrl, QSettings
 from datetime import datetime
 from PySide6.QtNetwork import QAbstractSocket
-from selenium.webdriver import Chrome
+#from selenium.webdriver import Chrome
 from PySide6.QtGui import QIcon
-from qt_material import apply_stylesheet
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from latest_user_agents import get_latest_user_agents
+from qt_material import apply_stylesheet
 
 class MainWindow(QMainWindow):
     def __init__(self):
