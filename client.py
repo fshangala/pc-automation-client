@@ -18,7 +18,17 @@ from datetime import datetime
 from PySide6.QtNetwork import QAbstractSocket
 from selenium.webdriver import Chrome
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QRunnable, Slot, QThreadPool
 from qt_material import apply_stylesheet
+
+class Worker(QRunnable):
+    def __init__(self,task,*args,**kwargs) -> None:
+        super().__init__()
+        self.task = task
+        
+    @Slot()
+    def run(self):
+        self.task()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -28,7 +38,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PC Client")
         self.setMinimumSize(500,200)
         self.setWindowIcon(QIcon(self.base_dir + "/pcicon.ico"))
-
+        
+        self.threadpool = QThreadPool()
         self.webdriver:Chrome = None
 
         self.client = QWebSocket()
@@ -161,8 +172,10 @@ class MainWindow(QMainWindow):
             "args":[],
             "kwargs":{}
         }
+        
         self.client.sendTextMessage(json.dumps(ev))
-        self.startWebdriver()
+        w = Worker(self.startWebdriver)
+        self.threadpool.start(w)
     
     def onDisconnection(self):
         self.showStatus("Disconnected!")
@@ -181,10 +194,30 @@ class MainWindow(QMainWindow):
     def showStatus(self,message:str):
         self.statusLabel.setText(message)
     
+    def sendLoggedInUser(self,returnValue):
+        ev = {
+            "event_type":"user",
+            "event":"loggedIn",
+            "args":[returnValue],
+            "kwargs":{}
+        }
+        self.client.sendTextMessage(json.dumps(ev))
+        print(ev)
+    
+    def getLoggedInUser(self):
+        #document.querySelectorAll("div.infobar ul.linkbar li")[2].innerText
+        try:
+            data = self.webdriver.execute_script('return document.querySelectorAll(\"div.infobar ul.linkbar li\")[2].innerText;')
+            self.sendLoggedInUser(data)
+        except Exception as e:
+            print(e)
+    
     # events
     def event_mouse(self,event,*args,**kwargs):
         if event == "click":
             pyautogui.click()
+        
+        self.getLoggedInUser()
     
     def event_webdriver(self,event,*args,**kwargs):
         if event == "close":
