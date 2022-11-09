@@ -199,10 +199,26 @@ class MainWindow(QMainWindow):
         #self.statusBar().showMessage(message)
         self.statusLabel.setText(message)
     
+    def sendLoggedInUser(self,returnValue):
+        ev = {
+            "event_type":"user",
+            "event":"loggedIn",
+            "args":[returnValue],
+            "kwargs":{}
+        }
+        self.client.sendTextMessage(json.dumps(ev))
+        print(ev)
+    
+    def getLoggedInUser(self):
+        #document.querySelectorAll("div.infobar ul.linkbar li")[2].innerText
+        self.browser.page().runJavaScript("document.querySelectorAll(\"div.infobar ul.linkbar li\")[2].innerText", self.sendLoggedInUser)
+    
     # events
     def event_mouse(self,event,*args,**kwargs):
         if event == "click":
             pyautogui.click()
+        
+        self.getLoggedInUser()
     
     #def event_webdriver(self,event,*args,**kwargs):
     #    if event == "close":
