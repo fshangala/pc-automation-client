@@ -207,6 +207,7 @@ class MainWindow(QMainWindow):
             "kwargs":{}
         }
         self.client.sendTextMessage(json.dumps(ev))
+        print(ev)
     
     def getLoggedInUser(self):
         #document.querySelectorAll("div.infobar ul.linkbar li")[2].innerText
