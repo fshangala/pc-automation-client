@@ -1,3 +1,5 @@
+VERSION = "2.1.1"
+
 import sys, json, pyautogui, os
 from PySide6.QtWidgets import (
     QApplication,
@@ -93,6 +95,7 @@ class MainWindow(QMainWindow):
         self.preferencesLayout.addWidget(self.saveButton)
 
         # ToolBar
+        self.menuBar().addAction(f"Version: {VERSION}")
         self.menuBar().addAction("Dashboard").triggered.connect(lambda:self.stack.setCurrentIndex(0))
         self.menuBar().addAction("Preferences").triggered.connect(lambda:self.stack.setCurrentIndex(1))
 
