@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/pc-automation-client.py",
+            "program": "${workspaceFolder}/client.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
