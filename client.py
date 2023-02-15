@@ -1,6 +1,6 @@
 VERSION = "2.1.1"
 
-import sys, json, pyautogui, os
+import sys, json, pyautogui, os, platform
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
         ev = {
             "event_type":"connection",
             "event":"pc_connected",
-            "args":[],
+            "args":[self.getPlatform()],
             "kwargs":{}
         }
         
@@ -214,6 +214,10 @@ class MainWindow(QMainWindow):
             self.sendLoggedInUser(data)
         except Exception as e:
             print(e)
+    
+    def getPlatform(self):
+        uname = platform.uname()
+        return f"NodeName:{uname.node};System:{uname.system};Version:{uname.version};Machine:{uname.machine}"
     
     # events
     def event_mouse(self,event,*args,**kwargs):
